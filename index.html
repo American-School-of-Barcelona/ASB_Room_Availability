@@ -1,0 +1,52 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ASB Room Availability</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <div class="title">
+          <p class="eyebrow">ASB room availability</p>
+          <h1>Live floor use</h1>
+          <p class="sub">Pick a day, period, and floor to see which rooms are in use.</p>
+        </div>
+        <div class="filters">
+          <label>
+            Day
+            <select id="daySelect"></select>
+          </label>
+          <label>
+            Period
+            <select id="periodSelect"></select>
+          </label>
+          <label>
+            Floor
+            <select id="floorSelect"></select>
+          </label>
+        </div>
+      </header>
+
+      <section class="legend">
+        <div class="swatch used"></div>
+        <span>In use</span>
+        <div class="swatch free"></div>
+        <span>Open</span>
+      </section>
+
+      <main class="map" id="mapWrap">
+        <img id="floorImage" alt="Floor plan">
+        <div id="roomOverlay"></div>
+        <div id="tooltip" aria-hidden="true"></div>
+      </main>
+
+      <p class="hint">Hover a red room for class details.</p>
+      <noscript>This page needs JavaScript to load the schedule data.</noscript>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
