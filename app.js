@@ -3,27 +3,27 @@
 const FLOOR_CONFIG = {
   0: {
     label: "Floor 0",
-    image: encodeURI("Screenshot 2026-01-08 at 10.23.51.png"),
-    width: 1040,
-    height: 1500,
+    image: encodeURI("floor-0.png"),
+    width: 1035,
+    height: 772,
   },
   1: {
     label: "Floor 1",
-    image: encodeURI("Screenshot 2026-01-08 at 10.23.46.png"),
-    width: 2372,
-    height: 1484,
+    image: encodeURI("floor-1.png"),
+    width: 1060,
+    height: 684,
   },
   2: {
     label: "Floor 2",
-    image: encodeURI("Screenshot 2026-01-08 at 10.23.46.png"),
-    width: 2372,
-    height: 1484,
+    image: encodeURI("floor-2.png"),
+    width: 1222,
+    height: 742,
   },
   4: {
     label: "Floor 4",
-    image: encodeURI("Screenshot 2026-01-08 at 10.23.29.png"),
-    width: 998,
-    height: 1434,
+    image: encodeURI("floor-3.png"),
+    width: 544,
+    height: 755,
   },
 };
 
@@ -44,7 +44,12 @@ const roomOverlay = document.getElementById("roomOverlay");
 const tooltip = document.getElementById("tooltip");
 const mapWrap = document.getElementById("mapWrap");
 
-function splitSqlValues(raw) {
+function parseInsertValues(line) {
+  const match = line.match(/VALUES \((.*)\);$/);
+  if (!match) {
+    return null;
+  }
+  const raw = match[1];
   const values = [];
   let current = "";
   let inString = false;
@@ -63,25 +68,15 @@ function splitSqlValues(raw) {
   }
 
   values.push(current.trim());
-  return values.map(parseSqlValue);
-}
-
-function parseSqlValue(value) {
-  if (value === "NULL") {
-    return null;
-  }
-  if (value.startsWith("'") && value.endsWith("'")) {
-    return value.slice(1, -1).replace(/''/g, "'");
-  }
-  return Number(value);
-}
-
-function parseSqlInsert(line) {
-  const match = line.match(/VALUES \((.*)\);$/);
-  if (!match) {
-    return null;
-  }
-  return splitSqlValues(match[1]);
+  return values.map((value) => {
+    if (value === "NULL") {
+      return null;
+    }
+    if (value.startsWith("'") && value.endsWith("'")) {
+      return value.slice(1, -1).replace(/''/g, "'");
+    }
+    return Number(value);
+  });
 }
 
 function loadSql() {
@@ -95,7 +90,7 @@ function parseSqlText(text) {
 
   for (const line of lines) {
     if (line.startsWith('INSERT INTO "RoomInfo"')) {
-      const values = parseSqlInsert(line);
+      const values = parseInsertValues(line);
       if (!values) {
         continue;
       }
@@ -115,7 +110,7 @@ function parseSqlText(text) {
       }
       state.roomsByFloor.get(room.floor).push(room);
     } else if (line.startsWith('INSERT INTO "ClassInfo"')) {
-      const values = parseSqlInsert(line);
+      const values = parseInsertValues(line);
       if (!values) {
         continue;
       }
@@ -126,7 +121,7 @@ function parseSqlText(text) {
         className: values[3],
       });
     } else if (line.startsWith('INSERT INTO "ClassSchedule"')) {
-      const values = parseSqlInsert(line);
+      const values = parseInsertValues(line);
       if (!values) {
         continue;
       }
@@ -218,6 +213,9 @@ function drawRooms() {
     return;
   }
 
+  if (!config.width || !config.height) {
+    return;
+  }
   const scaleX = rect.width / config.width;
   const scaleY = rect.height / config.height;
   const occupancy = getOccupancy(day, period, floor);
