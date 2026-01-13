@@ -1,0 +1,195 @@
+﻿:root {
+  --ink: #1f1a17;
+  --muted: #6e6056;
+  --paper: #f7f1e8;
+  --warm: #e9dccb;
+  --accent: #d06060;
+  --accent-dark: #a04242;
+  --accent-fill: rgba(214, 104, 104, 0.55);
+  --open: #b7c2b2;
+  --line: rgba(31, 26, 23, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Georgia", "Times New Roman", serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 10%, #ffffff 0%, var(--paper) 50%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(31, 26, 23, 0.04) 0px,
+      rgba(31, 26, 23, 0.04) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+}
+
+.title h1 {
+  margin: 6px 0 6px;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: 0.5px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.sub {
+  margin: 0;
+  color: var(--muted);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filters label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: #fffdf9;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+.swatch.used {
+  background: var(--accent);
+  border-color: var(--accent-dark);
+}
+
+.swatch.free {
+  background: var(--open);
+}
+
+.map {
+  position: relative;
+  background: var(--warm);
+  border: 1px solid var(--line);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 14px 24px rgba(31, 26, 23, 0.08);
+}
+
+#floorImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+#roomOverlay {
+  position: absolute;
+  inset: 12px;
+}
+
+.room {
+  position: absolute;
+  border: 1px solid rgba(31, 26, 23, 0.45);
+  background: rgba(183, 194, 178, 0.35);
+  border-radius: 3px;
+  transition: background 0.2s ease, border 0.2s ease;
+}
+
+.room.used {
+  background: var(--accent-fill);
+  border-color: var(--accent-dark);
+}
+
+#tooltip {
+  position: absolute;
+  min-width: 160px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fffdf9;
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 18px rgba(31, 26, 23, 0.16);
+  font-size: 13px;
+  color: var(--ink);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+#tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hint {
+  margin-top: 14px;
+  color: var(--muted);
+}
+
+.tip-rule {
+  border: 0;
+  border-top: 1px solid rgba(31, 26, 23, 0.2);
+  margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 24px 18px 36px;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .map {
+    padding: 8px;
+  }
+
+  #roomOverlay {
+    inset: 8px;
+  }
+}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - ASB Room Availability{% endblock %}
+
+{% block extra_css %}
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 2rem;
+    background: #f5f5f5;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  h1 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 3px solid #0066cc;
+    padding-bottom: 0.5rem;
+  }
+  .nav-links {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
+  .nav-links a {
+    color: #0066cc;
+    text-decoration: none;
+    margin-right: 1rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+  }
+  .nav-links a:hover {
+    background: #e9ecef;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  th {
+    background: #0066cc;
+    color: white;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+  tr:hover {
+    background: #f8f9fa;
+  }
+  .no-data {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+  }
+  .record-count {
+    margin-top: 1rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>{{ title }}</h1>
+
+  <div class="nav-links">
+    <strong>Test Routes:</strong><br>
+    <a href="/test/rooms">All Rooms</a>
+    <a href="/test/rooms/floor/0">Floor 0</a>
+    <a href="/test/rooms/floor/1">Floor 1</a>
+    <a href="/test/rooms/floor/2">Floor 2</a>
+    <a href="/test/schedules">Schedules</a>
+    <a href="/test/classes">Classes</a>
+    <a href="/test/occupancy/Day1/P1/1">Occupancy Example</a>
+    <a href="/test/filters">Filters</a>
+    <a href="/">Main App</a>
+  </div>
+
+  {% if data and data|length > 0 %}
+    <table>
+      <thead>
+        <tr>
+          {% for key in data[0].keys() %}
+            <th>{{ key }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data %}
+          <tr>
+            {% for value in row.values() %}
+              <td>{{ value }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="record-count">
+      Showing {{ data|length }} record(s)
+    </div>
+  {% else %}
+    <div class="no-data">No data found</div>
+  {% endif %}
+</div>
+{% endblock %}
