@@ -34,6 +34,8 @@ ASB_Room_Availability/
 
 ## Setup Instructions
 
+**Note:** This application requires Python 3.9-3.13. Python 3.14+ is supported but requires SQLAlchemy >= 2.0.36 (already specified in requirements.txt).
+
 ### 1. Install Dependencies
 
 ```bash

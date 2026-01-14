@@ -1,9 +1,14 @@
+import os
 from flask import Flask, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
 
+# Get absolute path to database file
+basedir = os.path.abspath(os.path.dirname(__file__))
+db_path = os.path.join(basedir, 'Computer Science IA - 2.db MODIFIED.db')
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Computer Science IA - 2.db MODIFIED.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
