@@ -1,4 +1,4 @@
-﻿const SQL_URL = encodeURI("Computer Science IA - 2.db OFFICIAL.db");
+﻿const API_URL = "/api/data";
 
 const FLOOR_CONFIG = {
   0: {
@@ -40,103 +40,60 @@ const daySelect = document.getElementById("daySelect");
 const periodSelect = document.getElementById("periodSelect");
 const floorSelect = document.getElementById("floorSelect");
 const floorImage = document.getElementById("floorImage");
-const roomOverlay = document.getElementById("roomOverlay");
-const tooltip = document.getElementById("tooltip");
-const mapWrap = document.getElementById("mapWrap");
+const roomTableBody = document.getElementById("roomTableBody");
 
-function parseInsertValues(line) {
-  const match = line.match(/VALUES \((.*)\);$/);
-  if (!match) {
-    return null;
-  }
-  const raw = match[1];
-  const values = [];
-  let current = "";
-  let inString = false;
 
-  for (let i = 0; i < raw.length; i += 1) {
-    const ch = raw[i];
-    if (ch === "'") {
-      inString = !inString;
-      current += ch;
-    } else if (ch === "," && !inString) {
-      values.push(current.trim());
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-
-  values.push(current.trim());
-  return values.map((value) => {
-    if (value === "NULL") {
-      return null;
-    }
-    if (value.startsWith("'") && value.endsWith("'")) {
-      return value.slice(1, -1).replace(/''/g, "'");
-    }
-    return Number(value);
-  });
-}
-
-function loadSql() {
-  return fetch(SQL_URL)
-    .then((response) => response.text())
-    .then(parseSqlText);
-}
-
-function parseSqlText(text) {
-  const lines = text.split(/\r?\n/);
-
-  for (const line of lines) {
-    if (line.startsWith('INSERT INTO "RoomInfo"')) {
-      const values = parseInsertValues(line);
-      if (!values) {
-        continue;
+function loadData() {
+  return fetch(API_URL)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to load data (${response.status})`);
       }
-      const room = {
-        id: values[0],
-        number: values[1],
-        floor: values[2],
-        type: values[3],
-        x: values[4],
-        y: values[5],
-        width: values[6],
-        height: values[7],
-      };
-      state.roomsById.set(room.id, room);
-      if (!state.roomsByFloor.has(room.floor)) {
-        state.roomsByFloor.set(room.floor, []);
-      }
-      state.roomsByFloor.get(room.floor).push(room);
-    } else if (line.startsWith('INSERT INTO "ClassInfo"')) {
-      const values = parseInsertValues(line);
-      if (!values) {
-        continue;
-      }
-      state.classInfoBySchedule.set(values[0], {
-        scheduleId: values[0],
-        teacher: values[1],
-        grade: values[2],
-        className: values[3],
+      return response.json();
+    })
+    .then((data) => {
+      state.roomsById.clear();
+      state.roomsByFloor.clear();
+      state.classInfoBySchedule.clear();
+
+      data.rooms.forEach((room) => {
+        const roomData = {
+          id: room.RoomID,
+          number: room.RoomNumber,
+          floor: room.RoomFloor,
+          type: room.RoomType,
+          x: room.X,
+          y: room.Y,
+          width: room.Width,
+          height: room.Height,
+        };
+        state.roomsById.set(roomData.id, roomData);
+        if (!state.roomsByFloor.has(roomData.floor)) {
+          state.roomsByFloor.set(roomData.floor, []);
+        }
+        state.roomsByFloor.get(roomData.floor).push(roomData);
       });
-    } else if (line.startsWith('INSERT INTO "ClassSchedule"')) {
-      const values = parseInsertValues(line);
-      if (!values) {
-        continue;
-      }
-      state.schedules.push({
-        scheduleId: values[0],
-        classId: values[1],
-        day: values[2],
-        period: values[3],
-        roomId: values[4],
-      });
-    }
-  }
 
-  state.days = Array.from(new Set(state.schedules.map((s) => s.day))).sort();
-  state.periods = Array.from(new Set(state.schedules.map((s) => s.period))).sort();
+      data.classInfo.forEach((info) => {
+        state.classInfoBySchedule.set(info.ScheduleID, {
+          scheduleId: info.ScheduleID,
+          teacher: info.TeacherName,
+          grade: info.GradeLevel,
+          className: info.ClassName,
+        });
+      });
+
+      state.schedules = data.schedules.map((entry) => ({
+        scheduleId: entry.ScheduleID,
+        classId: entry.ClassID,
+        day: entry.Day,
+        period: entry.Period,
+        roomId: entry.RoomID,
+      }));
+
+      state.days = Array.from(new Set(state.schedules.map((s) => s.day))).sort();
+      state.periods = Array.from(new Set(state.schedules.map((s) => s.period))).sort();
+    });
 }
 
 function setOptions(select, values, labeler) {
@@ -189,76 +146,45 @@ function getOccupancy(day, period, floor) {
   return occupancy;
 }
 
-function showTooltip(content, x, y) {
-  tooltip.innerHTML = content;
-  tooltip.style.left = `${x + 12}px`;
-  tooltip.style.top = `${y + 12}px`;
-  tooltip.classList.add("visible");
-  tooltip.setAttribute("aria-hidden", "false");
-}
-
-function hideTooltip() {
-  tooltip.classList.remove("visible");
-  tooltip.setAttribute("aria-hidden", "true");
-}
-
 function drawRooms() {
   const { day, period, floor } = currentFilters();
   const rooms = state.roomsByFloor.get(floor) || [];
-  const config = FLOOR_CONFIG[floor];
-  const rect = floorImage.getBoundingClientRect();
-
-  roomOverlay.innerHTML = "";
-  if (!config || rect.width === 0 || rect.height === 0) {
-    return;
-  }
-
-  if (!config.width || !config.height) {
-    return;
-  }
-  const scaleX = rect.width / config.width;
-  const scaleY = rect.height / config.height;
   const occupancy = getOccupancy(day, period, floor);
 
-  rooms.forEach((room) => {
-    const roomEl = document.createElement("div");
-    roomEl.className = "room";
-    roomEl.style.left = `${room.x * scaleX}px`;
-    roomEl.style.top = `${room.y * scaleY}px`;
-    roomEl.style.width = `${room.width * scaleX}px`;
-    roomEl.style.height = `${room.height * scaleY}px`;
+  if (!roomTableBody) {
+    return;
+  }
 
-    const useEntries = occupancy.get(room.id);
-    if (useEntries && useEntries.length) {
-      roomEl.classList.add("used");
+  roomTableBody.innerHTML = "";
+  rooms
+    .slice()
+    .sort((a, b) => String(a.number).localeCompare(String(b.number)))
+    .forEach((room) => {
+      const row = document.createElement("tr");
+      const roomCell = document.createElement("td");
+      roomCell.textContent = room.number;
 
-      roomEl.addEventListener("mouseenter", (event) => {
-        const info = useEntries.map((entry) => {
+      const statusCell = document.createElement("td");
+      const useEntries = occupancy.get(room.id);
+      if (useEntries && useEntries.length) {
+        statusCell.className = "status-used";
+        const detail = useEntries.map((entry) => {
           const classInfo = state.classInfoBySchedule.get(entry.scheduleId) || {};
           const teacher = classInfo.teacher || "Unknown";
           const className = classInfo.className || "Class";
           const grade = classInfo.grade ? `Grade ${classInfo.grade}` : "";
-          return `<div><strong>${room.number}</strong> - ${className}</div>` +
-            `<div>${teacher}</div>` +
-            `<div>${grade}</div>`;
-        }).join("<hr class=\"tip-rule\">");
+          return `${className} - ${teacher}${grade ? ` (${grade})` : ""}`;
+        }).join("; ");
+        statusCell.textContent = detail;
+      } else {
+        statusCell.className = "status-open";
+        statusCell.textContent = "Available";
+      }
 
-        const mapRect = mapWrap.getBoundingClientRect();
-        showTooltip(info, event.clientX - mapRect.left, event.clientY - mapRect.top);
-      });
-
-      roomEl.addEventListener("mousemove", (event) => {
-        const mapRect = mapWrap.getBoundingClientRect();
-        showTooltip(tooltip.innerHTML, event.clientX - mapRect.left, event.clientY - mapRect.top);
-      });
-
-      roomEl.addEventListener("mouseleave", () => {
-        hideTooltip();
-      });
-    }
-
-    roomOverlay.appendChild(roomEl);
-  });
+      row.appendChild(roomCell);
+      row.appendChild(statusCell);
+      roomTableBody.appendChild(row);
+    });
 }
 
 function updateImage() {
@@ -276,7 +202,30 @@ function handleChange() {
 }
 
 function init() {
-  loadSql().then(() => {
+  if (roomTableBody) {
+    roomTableBody.innerHTML = "";
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 2;
+    cell.textContent = "Loading schedule data...";
+    row.appendChild(cell);
+    roomTableBody.appendChild(row);
+  }
+
+  if (window.location.protocol === "file:") {
+    if (roomTableBody) {
+      roomTableBody.innerHTML = "";
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 2;
+      cell.textContent = "Open this page with http://localhost:3000 so the data can load.";
+      row.appendChild(cell);
+      roomTableBody.appendChild(row);
+    }
+    return;
+  }
+
+  loadData().then(() => {
     buildFilters();
     updateImage();
     drawRooms();
@@ -289,6 +238,17 @@ function init() {
     window.addEventListener("resize", () => {
       window.requestAnimationFrame(drawRooms);
     });
+  }).catch((error) => {
+    if (roomTableBody) {
+      roomTableBody.innerHTML = "";
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 2;
+      cell.textContent = `Load error: ${error}`;
+      row.appendChild(cell);
+      roomTableBody.appendChild(row);
+    }
+    console.error("Data load failed", error);
   });
 }
 
